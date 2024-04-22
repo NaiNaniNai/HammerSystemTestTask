@@ -4,8 +4,12 @@ from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.views import APIView
 
-from account.serializers import LoginSerializer, VerifyPhoneSerializer
-from account.service import LoginService, VerifyPhoneService
+from account.serializers import (
+    LoginSerializer,
+    VerifyPhoneSerializer,
+    UsedReferralCodeSerializer,
+)
+from account.service import LoginService, VerifyPhoneService, ProfileService
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
@@ -43,3 +47,21 @@ class LogoutView(APIView):
         logout(request)
         data = {"Logout": "True"}
         return JsonResponse(data, status=status.HTTP_200_OK)
+
+
+class ProfileView(APIView):
+    authentication_classes = (CsrfExemptSessionAuthentication,)
+
+    def get(self, request):
+        service = ProfileService(request)
+        data, status = service.get()
+        return JsonResponse(data, status=status)
+
+    def post(self, request):
+        serializer = UsedReferralCodeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return JsonResponse(serializer.error_messages)
+
+        service = ProfileService(request)
+        data, status = service.post(serializer)
+        return JsonResponse(data, status=status)
