@@ -34,7 +34,7 @@ class LoginView(CreateAPIView):
 
 
 class VerifyPhoneView(CreateAPIView):
-
+    authentication_classes = (CsrfExemptSessionAuthentication,)
     serializer_class = VerifyPhoneSerializer
 
     def create(self, request, token):
