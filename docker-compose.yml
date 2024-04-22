@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    command: >
+      sh -c "poetry run python manage.py makemigrations &&
+             poetry run python manage.py migrate &&
+             poetry run python manage.py runserver 0.0.0.0:8080"
+    volumes:
+      - .:/hammer_system_test_task
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASSWORD}
+      - DOCKER_ENV=true
+    ports:
+      - '8080:8080'
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+
+  db:
+    image: postgres:15.4
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - .env
+
+  redis:
+    image: redis
+    restart: always
+    container_name: "hammer_system_test_task_redis"
+    command: redis-server
+    ports:
+      - "127.0.0.1:16379:6379"
+
+  celery:
+    build: .
+    command: >
+      sh -c "poetry run celery -A project_root worker -l info &&
+             poetry run celery -A project_root beat -l info"
+    volumes:
+      - .:/hammer_system_test_task
+    environment:
+      - DOCKER_ENV=true
+    links:
+      - redis
+    depends_on:
+      - web
+      - redis
+
+volumes:
+  postgres_data:
