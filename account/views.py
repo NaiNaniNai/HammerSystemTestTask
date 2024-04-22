@@ -2,6 +2,7 @@ from django.contrib.auth import logout
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 
 from account.serializers import (
@@ -17,11 +18,12 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
         return None
 
 
-class LoginView(APIView):
+class LoginView(CreateAPIView):
     authentication_classes = (CsrfExemptSessionAuthentication,)
+    serializer_class = LoginSerializer
 
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
             return JsonResponse(serializer.error_messages)
@@ -31,8 +33,11 @@ class LoginView(APIView):
         return JsonResponse(data, status=status)
 
 
-class VerifyPhoneView(APIView):
-    def post(self, request, token):
+class VerifyPhoneView(CreateAPIView):
+
+    serializer_class = VerifyPhoneSerializer
+
+    def create(self, request, token):
         serializer = VerifyPhoneSerializer(data=request.data)
         if not serializer.is_valid():
             return JsonResponse(serializer.error_messages)
@@ -50,6 +55,8 @@ class LogoutView(APIView):
 
 
 class ProfileView(APIView):
+    """Был оставлен APIView из-за проблем с автодокументацией"""
+
     authentication_classes = (CsrfExemptSessionAuthentication,)
 
     def get(self, request):
