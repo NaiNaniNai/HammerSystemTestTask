@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    "phonenumber_field",
+    "account",
 ]
 
 MIDDLEWARE = [
@@ -98,7 +100,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-STATIC_DIR = os.path.join(BASE_DIR, "../static/")
+STATIC_DIR = os.path.join(BASE_DIR, "static/")
 STATICFILES_DIRS = [STATIC_DIR]
 
 MEDIA_URL = "media/"
@@ -113,3 +115,5 @@ MIGRATION_LINTER_OPTIONS = {
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = "account.CustomUser"
