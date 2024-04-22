@@ -1,4 +1,6 @@
+from django.contrib.auth import logout
 from django.http import JsonResponse
+from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.views import APIView
 
@@ -34,3 +36,10 @@ class VerifyPhoneView(APIView):
         service = VerifyPhoneService(request, serializer, token)
         data, status = service.post()
         return JsonResponse(data, status=status)
+
+
+class LogoutView(APIView):
+    def get(self, request):
+        logout(request)
+        data = {"Logout": "True"}
+        return JsonResponse(data, status=status.HTTP_200_OK)
