@@ -8,6 +8,7 @@ from rest_framework import status
 from account.repository import UserRepository
 
 from account.utils import generate_confirm_code
+from .serializers import UserSerializer
 from .task import send_sms_code
 
 
@@ -85,3 +86,54 @@ class VerifyPhoneService:
         cache.delete(redis_key)
 
         return ({"message": "Вы авторизовались"}, status.HTTP_200_OK)
+
+
+class ProfileService:
+    def __init__(self, request):
+        self.request = request
+
+    def get(self) -> tuple:
+        user = UserRepository.get_from_request(self.request)
+
+        if not user.is_authenticated:
+            return ({"error": "Вы не авторизованы"}, status.HTTP_403_FORBIDDEN)
+
+        serializer = UserSerializer(user)
+
+        return (serializer.data, status.HTTP_200_OK)
+
+    def post(self, serializer):
+        user = UserRepository.get_from_request(self.request)
+
+        if not user.is_authenticated:
+            return ({"error": "Вы не авторизованы"}, status.HTTP_403_FORBIDDEN)
+
+        if user.used_referral_code:
+            return (
+                {"error": "У вас уже введен код автора"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        referral_code = serializer.data.get("used_referral_code")
+
+        if user.invite_referral_code == referral_code:
+            return (
+                {"error": "Нельзя использовать собственный код автора"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        exist_referral_code = self._check_referral_code(referral_code)
+        if not exist_referral_code:
+            return ({"error": "Такого кода не существует"}, status.HTTP_400_BAD_REQUEST)
+        self._install_used_referral_code(user, referral_code)
+        return ({"message": "Код добавлен"}, status.HTTP_200_OK)
+
+    def _check_referral_code(self, referral_code):
+        exist = UserRepository.check_exist_referral_code(referral_code)
+        if not exist:
+            return False
+        return True
+
+    def _install_used_referral_code(self, user, referral_code) -> None:
+        user.used_referral_code = referral_code
+        user.save()
